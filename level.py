@@ -2,7 +2,6 @@ import pygame
 from constants import GRAY, RED_GEM_COLOR, BLUE_GEM_COLOR
 
 class Platform(pygame.sprite.Sprite):
-    """Simple solid platform for collisions."""
     def __init__(self, x, y, width, height):
         super().__init__()
         self.image = pygame.Surface((width, height))
@@ -12,26 +11,18 @@ class Platform(pygame.sprite.Sprite):
         self.rect.y = y
 
 class Gem(pygame.sprite.Sprite):
-    """
-    Represent collectible gems.
-    Design Decisions: 
-    - Each gem has a color to distinguish between Fireboy (red) and Watergirl (blue) gems.
-    - Uses a simple diamond-shaped polygon for visual representation.
-    """
     def __init__(self, x, y, color):
         super().__init__()
         self.color = color
         self.image = pygame.Surface((20, 20), pygame.SRCALPHA)
-        # Draw a diamond shape using a polygon
         points = [(10, 0), (20, 10), (10, 20), (0, 10)]
         pygame.draw.polygon(self.image, color, points)
         self.rect = self.image.get_rect(topleft=(x, y))
 
 class Level:
-    """Manages level structure and sprite groups."""
     def __init__(self):
         self.platforms = pygame.sprite.Group()
-        self.gems = pygame.sprite.Group() # Group specifically for collectibles
+        self.gems = pygame.sprite.Group() 
         self.all_sprites = pygame.sprite.Group()
         
     def add_platform(self, platform):
@@ -43,28 +34,43 @@ class Level:
         self.gems.add(gem)
         self.all_sprites.add(gem)
 
-    def create_basic_level(self):
-        """Builds a basic starting level."""
-        # Ground
-        ground = Platform(0, 580, 800, 20)
-        self.add_platform(ground)
-        
-        # Some simple platforms to jump on
-        p1 = Platform(100, 450, 150, 20)
-        p2 = Platform(350, 350, 150, 20)
-        p3 = Platform(600, 250, 150, 20)
-        
-        self.add_platform(p1)
-        self.add_platform(p2)
-        self.add_platform(p3)
+    def clear_level(self):
+        self.platforms.empty()
+        self.gems.empty()
+        self.all_sprites.empty()
 
-        # Add some collectible gems
-        self.add_gem(150, 420, RED_GEM_COLOR)
-        self.add_gem(400, 320, BLUE_GEM_COLOR)
-        self.add_gem(650, 220, RED_GEM_COLOR)
-        
-        # Walls
-        left_wall = Platform(0, 0, 20, 600)
-        right_wall = Platform(780, 0, 20, 600)
-        self.add_platform(left_wall)
-        self.add_platform(right_wall)
+    def load_level(self, level_num):
+        self.clear_level()
+        # Boundaries
+        self.add_platform(Platform(0, 580, 800, 20)) # Floor
+        self.add_platform(Platform(0, 0, 20, 600))   # Left Wall
+        self.add_platform(Platform(780, 0, 20, 600)) # Right Wall
+
+        if level_num == 1:
+            # Gaps of 110 pixels (580 -> 470 -> 360 -> 250)
+            self.add_platform(Platform(100, 470, 300, 20))
+            self.add_platform(Platform(450, 360, 250, 20))
+            self.add_platform(Platform(150, 250, 300, 20)) # Top Platform
+            
+            # Gems for Level 1
+            self.add_gem(150, 440, RED_GEM_COLOR)
+            self.add_gem(500, 330, BLUE_GEM_COLOR)
+            
+        elif level_num == 2:
+            # Middle divider
+            self.add_platform(Platform(390, 150, 20, 430)) 
+            
+            # Fireboy side (Left)
+            self.add_platform(Platform(20, 470, 150, 20))
+            self.add_platform(Platform(200, 360, 150, 20))
+            self.add_gem(50, 440, RED_GEM_COLOR)   # Added Gem
+            self.add_gem(250, 330, RED_GEM_COLOR)  # Added Gem
+            
+            # Watergirl side (Right)
+            self.add_platform(Platform(610, 470, 150, 20))
+            self.add_platform(Platform(430, 360, 150, 20))
+            self.add_gem(650, 440, BLUE_GEM_COLOR) # Added Gem
+            self.add_gem(480, 330, BLUE_GEM_COLOR) # Added Gem
+
+            # Final Goal Platform
+            self.add_platform(Platform(300, 250, 200, 20))        

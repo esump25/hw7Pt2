@@ -7,87 +7,97 @@ from player import Player
 from level import Level
 
 def main():
-    """
-    Main entry point for the Fireboy and Watergirl clone.
-    Initializes Pygame, handles the game loop, and coordinates updates.
-    """
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Fireboy and Watergirl Prototype")
     clock = pygame.time.Clock()
+    font = pygame.font.SysFont("Arial", 64, bold=True)
 
-    # Define Control Schemes
-    # Fireboy usually uses Arrow Keys
-    fireboy_controls = {
-        'left': pygame.K_LEFT,
-        'right': pygame.K_RIGHT,
-        'jump': pygame.K_UP
-    }
-    
-    # Watergirl usually uses WASD
-    watergirl_controls = {
-        'left': pygame.K_a,
-        'right': pygame.K_d,
-        'jump': pygame.K_w
-    }
+    # Controls
+    fireboy_controls = {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'jump': pygame.K_UP}
+    watergirl_controls = {'left': pygame.K_a, 'right': pygame.K_d, 'jump': pygame.K_w}
 
-    # Setup Level
+    # Level Setup
+    current_level_num = 1
     level = Level()
-    level.create_basic_level()
+    level.load_level(current_level_num) 
 
-    # Create Players
+    # Players
     fireboy = Player(50, 500, FIREBOY_SPRITE_PATH, fireboy_controls)
     watergirl = Player(150, 500, WATERGIRL_SPRITE_PATH, watergirl_controls)
 
-    # Sprite Groups for Rendering
     all_sprites = pygame.sprite.Group()
-    all_sprites.add(level.all_sprites)
-    all_sprites.add(fireboy)
-    all_sprites.add(watergirl)
     
-    # We maintain a separate group for players if we need specific updates later
-    players = pygame.sprite.Group()
-    players.add(fireboy)
-    players.add(watergirl)
+    def refresh_sprite_groups():
+        all_sprites.empty()
+        all_sprites.add(level.all_sprites)
+        all_sprites.add(fireboy)
+        all_sprites.add(watergirl)
 
-    # Game Loop
+    refresh_sprite_groups()
+
+    # Exit Area (Matches Level 1 top platform at y=250)
+    exit_rect = pygame.Rect(270, 170, 60, 80) 
+
     running = True
+    game_over = False
+
     while running:
-        # 1. Event Handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                
-        # 2. Input Polling
-        keys = pygame.key.get_pressed()
-        
-        # 3. Update State
-        # We update each player relative to platforms in the level
-        fireboy.update(keys, level.platforms)
-        watergirl.update(keys, level.platforms)
-        
-        # 4. Collection Logic (Gems)
-        # Check collisions between each player and the gems in the level.
-        # Fireboy only collects Red gems, Watergirl only collects Blue gems.
-        for player, gem_color, name in [(fireboy, RED_GEM_COLOR, "Fireboy"), 
-                                        (watergirl, BLUE_GEM_COLOR, "Watergirl")]:
-            collected = pygame.sprite.spritecollide(player, level.gems, False)
-            for gem in collected:
-                if gem.color == gem_color:
-                    gem.kill() # Remove from all groups (gems and all_sprites)
-                    player.score += 1
-                    print(f"{name} collected a gem! Total Score: {player.score}")
+            if game_over and event.type == pygame.KEYDOWN:
+                running = False # Press any key to close after game over
 
-        # 5. Rendering
-        screen.fill(BLACK) # Clear screen
+        if not game_over:
+            keys = pygame.key.get_pressed()
+            fireboy.update(keys, level.platforms)
+            watergirl.update(keys, level.platforms)
+            
+            # Gem Collection
+            for player, gem_color in [(fireboy, RED_GEM_COLOR), (watergirl, BLUE_GEM_COLOR)]:
+                collected = pygame.sprite.spritecollide(player, level.gems, False)
+                for gem in collected:
+                    if gem.color == gem_color:
+                        gem.kill()
+                        player.score += 1
+
+            # Level Transition Logic
+            if fireboy.rect.colliderect(exit_rect) and watergirl.rect.colliderect(exit_rect):
+                current_level_num += 1
+                
+                if current_level_num > 2:
+                    game_over = True
+                else:
+                    level.load_level(current_level_num)
+                    # Reposition exit for Level 2 (Matches top platform at y=250)
+                    if current_level_num == 2:
+                        exit_rect.topleft = (370, 170) 
+                    
+                    # Reset Positions
+                    fireboy.rect.topleft = (50, 500)
+                    watergirl.rect.topleft = (150, 500)
+                    fireboy.vel_y = 0
+                    watergirl.vel_y = 0
+                    refresh_sprite_groups()
+
+        # --- DRAWING ---
+        screen.fill(BLACK)
         
-        # Draw all sprites (platforms, characters, gems)
-        all_sprites.draw(screen)
-        
-        # Refreshes the display
+        if not game_over:
+            pygame.draw.rect(screen, (0, 255, 0), exit_rect, 2) 
+            all_sprites.draw(screen)
+        else:
+            # Display Game Over Text
+            text_surf = font.render("GAME OVER", True, WHITE)
+            text_rect = text_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            screen.blit(text_surf, text_rect)
+            
+            sub_text = pygame.font.SysFont("Arial", 24).render("Press any key to exit", True, WHITE)
+            sub_rect = sub_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
+            screen.blit(sub_text, sub_rect)
+
         pygame.display.flip()
-        
-        # Caps frame rate
         clock.tick(FPS)
 
     pygame.quit()
