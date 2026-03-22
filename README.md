@@ -33,3 +33,12 @@ The project prioritizes clarity over cleverness. Design decisions, such as using
 fireboy_sprite credit: https://official-fireboy-watergirl.fandom.com/wiki/Fireboy
 
 watergirl_sprite credit: https://official-fireboy-watergirl.fandom.com/wiki/Watergirl
+
+
+------- NEW README
+Key Prompts for Part 2
+1. okay now ive been given someone else's code. how do i get to the next level?
+2. the ending box is in the middle of the screen floating- impossible for players to reach it
+3. The platforms in this game of level two are too high and not possible to reach with a jump power of -14. Fix the platforms to be tangible to play
+4. there are no gems in level two and the ending green rectangle is not on a platform. i need to fix this to make the game playable
+5. after level 2 i want it to say gameover
